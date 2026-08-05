@@ -1,0 +1,27 @@
+{
+  "name": "喷油器工程计算平台",
+  "short_name": "喷油器计算",
+  "description": "孔径计算 · 流量可视化 · 发动机参数转换",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f0f4fa",
+  "theme_color": "#2563eb",
+  "lang": "zh-CN",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "screenshots": []
+}
