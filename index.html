@@ -4,17 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>喷油器工程计算平台</title>
-
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2563eb">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="喷油器计算">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -88,7 +77,7 @@ h1 {
   width: 100%; max-width: 900px;
 }
 .module-btn {
-  flex: 1; padding: 14px 10px;
+  flex: 1; padding: 14px 6px;
   background: transparent; border: none; cursor: pointer;
   font-family: inherit; font-size: 13px; font-weight: 600;
   color: var(--text-muted);
@@ -119,7 +108,7 @@ h1 {
 }
 
 /* ────────────────────────────────────────────
-   MODULE 1: 孔径/流量系数计算 (from v8)
+   MODULE 1: 孔径/流量系数计算
 ──────────────────────────────────────────── */
 .inner-tabs {
   display: flex; border-bottom: 1px solid var(--border);
@@ -282,7 +271,7 @@ canvas.chart-cvs { width:100%!important; max-height:200px; }
 canvas.map-cvs { width: 100% !important; display: block; }
 
 /* ────────────────────────────────────────────
-   MODULE 2: 流量范围可视化 (from v4)
+   MODULE 2: 流量范围可视化
 ──────────────────────────────────────────── */
 .viz-panel { padding: 20px; }
 .viz-section { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
@@ -331,7 +320,7 @@ canvas.map-cvs { width: 100% !important; display: block; }
 .viz-merged-chart-box { position: relative; height: 460px; margin-top: 12px; }
 
 /* ────────────────────────────────────────────
-   MODULE 3: 发动机参数转换 (from v1)
+   MODULE 3: 发动机参数转换
 ──────────────────────────────────────────── */
 .conv-wrapper { padding: 20px; }
 .conv-tabs { display: flex; gap: 6px; background: var(--surface2); padding: 5px; border-radius: 10px; margin-bottom: 22px; border: 1px solid var(--border); flex-wrap: wrap; }
@@ -437,7 +426,7 @@ canvas#mapModalCanvas { width: 100% !important; display: block; }
 <header>
   <div class="logo-badge"><div class="logo-dot"></div>Fuel Injector Engineering Platform</div>
   <h1>喷油器工程计算平台</h1>
-  <p class="subtitle">孔径计算 · 流量可视化 · 参数转换</p>
+  <p class="subtitle">孔径计算 · 流量可视化 · 参数转换 · 最大孔数计算</p>
   <div class="author">作者：LU Xu</div>
 </header>
 
@@ -454,6 +443,10 @@ canvas#mapModalCanvas { width: 100% !important; display: block; }
   <button class="module-btn" onclick="switchModule('converter', this)">
     <span class="mod-icon">🔄</span>
     <span class="mod-label">发动机参数<br>转换工具</span>
+  </button>
+  <button class="module-btn" onclick="switchModule('maxholes', this)">
+    <span class="mod-icon">🎯</span>
+    <span class="mod-label">最大孔数允许值<br>计算工具</span>
   </button>
 </div>
 
@@ -695,6 +688,39 @@ canvas#mapModalCanvas { width: 100% !important; display: block; }
 </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     MODULE 4: 最大孔数允许值计算 (NEW)
+══════════════════════════════════════════════ -->
+<div class="module-panel" id="panel-maxholes">
+<div class="card">
+<div class="conv-wrapper">
+  <div class="conv-note" style="margin-top: 0; margin-bottom: 20px; background-color: #eef4ff; border-color: #c7d9ff; color: #1d4ed8;">
+    <strong>涡流比说明：</strong>
+    涡流比 = 气缸内空气旋转的平均角速度 / 曲轴角速度。<br>
+    • 涡流比越大 → 空气旋转越强；<br>
+    • 涡流比越小 → 空气旋转越弱。
+  </div>
+  <div class="section-title">输入参数</div>
+  <div class="conv-form-group">
+    <label>涡流比 (Swirl Ratio)</label>
+    <input type="number" id="mh_swirl" value="2.0" step="0.1" min="0.01" oninput="calcMaxHoles()">
+  </div>
+  <div class="conv-form-group">
+    <label>喷油持续期 (°CA)</label>
+    <input type="number" id="mh_ca" value="25.0" step="0.1" min="0.1" oninput="calcMaxHoles()">
+  </div>
+  <div class="conv-result-box" style="background-color: #f0fdf4; border-left: 4px solid #059669;">
+    <div class="conv-result-title" style="color: #047857;">计算结果 (最大允许孔数)</div>
+    <div class="conv-result-value" id="mh_result" style="color: #065f46;">7.20</div>
+  </div>
+  <div class="conv-note">
+    <strong>计算公式：</strong>
+    <code>最大允许的孔数 = 360° ÷ 喷油持续期度数 ÷ 涡流比</code>
+  </div>
+</div>
+</div>
+</div>
+
 <!-- ══ MODALS ══ -->
 <div class="modal-overlay" id="mergeModal">
   <div class="modal-box">
@@ -732,6 +758,7 @@ function switchModule(id, btn) {
   document.getElementById('panel-' + id).classList.add('active');
   if (id === 'orifice') { updateInnerIndicator(currentInnerTab); calcD(); calcMu(); }
   if (id === 'flowviz') { updateBaseQhyd(); }
+  if (id === 'maxholes') { calcMaxHoles(); }
 }
 
 // ══════════════════════════════════════════════
@@ -829,7 +856,6 @@ function makeChartConfig(item,merged) {
 function toggleSelect(idx) { chartStore[idx].selected=!chartStore[idx].selected; renderChartList(); }
 function deleteChart(idx) { if(chartStore[idx].chartInstance) chartStore[idx].chartInstance.destroy(); chartStore.splice(idx,1); renderChartList(); if(chartStore.length===0) document.getElementById('chartsArea').style.display='none'; }
 
-// SVG helpers (full, from v8)
 let _currentSVGContent='', _currentSVGFilename='chart.svg';
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function buildLegendSVG(paramRows,accentColor,W) {
@@ -1045,78 +1071,77 @@ function renderMainChart(xLabel,xData,yData){
   currentChart=new Chart(ctx,{type:'line',data:{labels:xData,datasets:[{label:'当前动态流道流量值 Qhyd',data:yData,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.04)',borderWidth:2,pointRadius:2,tension:0.1,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top'}},scales:{x:{title:{display:true,text:xLabel,font:{weight:'bold'}}},y:{title:{display:true,text:'Qhyd (cm³/100bar/30s)',font:{weight:'bold'}}}}}});
 }
 
-function saveCurrentToWorkspace(){
-  if(!latestRunData) return;
-  if(isSaving) return; isSaving=true; setTimeout(()=>{isSaving=false;},800);
-  cardCounter++;const id=cardCounter;const container=document.getElementById('workspaceContainer');
-  const card=document.createElement('div');card.className='viz-saved-card';card.id='saved_card_'+id;
-  const p=latestRunData.params,config=latestRunData.sweepConfig;
-  const remarkHTML=`<strong>[记录 #${id}] 扫描:</strong> ${config.varName} (${config.min}~${config.max})<br><strong>边界:</strong> 油耗:${p.M2} | 功率:${p.M3} | 转速:${p.M4} | 缸数:${p.M5} | 持续期:${p.B3}° | 轨压:${p.E3}bar`;
-  card.innerHTML=`<div class="viz-card-top"><div class="viz-param-badge">${remarkHTML}</div><label class="viz-checkbox-container"><input type="checkbox" class="compare-selector" data-id="${id}"> 对比</label></div><div class="viz-saved-chart-box"><canvas id="saved_canvas_${id}"></canvas></div><div style="text-align:right"><button class="viz-btn viz-btn-export" style="padding:4px 10px;font-size:11px;" onclick="exportSingleChart(${id})">💾 导出此图</button></div>`;
-  container.appendChild(card);
-  dataWarehouse[id]=JSON.parse(JSON.stringify(latestRunData));
-  const sweepRangeStr=`${config.varName}:[${config.min}~${config.max},${config.steps}pts]`;
-  const fixedParams=[];
-  if(config.varCode!=='M2')fixedParams.push('油耗:'+p.M2);if(config.varCode!=='M3')fixedParams.push('功率:'+p.M3);if(config.varCode!=='M4')fixedParams.push('转速:'+p.M4);if(config.varCode!=='B3')fixedParams.push('持续期:'+p.B3+'°');if(config.varCode!=='E3')fixedParams.push('轨压:'+p.E3+'bar');
-  dataWarehouse[id].summaryText=`[边界 #${id}] 扫描: ${sweepRangeStr} | 固定: ${fixedParams.join(' ')}`;
-  const embeddedTitle=[`Qhyd 仿真快照记录 #${id} (扫描: ${config.varName})`,`固定: 油耗:${p.M2} | 功率:${p.M3} | 转速:${p.M4} | 缸数:${p.M5} | 持续期:${p.B3}°CA | 轨压:${p.E3}bar`];
-  const ctx=document.getElementById('saved_canvas_'+id).getContext('2d');
-  savedChartInstances[id]=new Chart(ctx,{type:'line',data:{labels:latestRunData.xData,datasets:[{label:'流量值 Qhyd (记录 #'+id+')',data:latestRunData.yData,borderColor:'#059669',backgroundColor:'transparent',borderWidth:2,pointRadius:1,tension:0.1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top'},title:{display:true,text:embeddedTitle,align:'start',color:'#2C3E50',font:{size:10,weight:'normal'},padding:{top:5,bottom:10}}}}});
-  card.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-function mergeSelectedCharts(){
-  const checkboxes=document.querySelectorAll('.compare-selector:checked');const selectedIds=Array.from(checkboxes).map(cb=>parseInt(cb.getAttribute('data-id')));
-  if(selectedIds.length<2){alert('⚠️ 请至少勾选 2 个图表再执行合并！');return;}
-  const baselineId=selectedIds[0],baseVarCode=dataWarehouse[baselineId].sweepConfig.varCode,baseLength=dataWarehouse[baselineId].xData.length,baseFirstX=dataWarehouse[baselineId].xData[0],baseLastX=dataWarehouse[baselineId].xData[baseLength-1];
-  for(let i=1;i<selectedIds.length;i++){const checkId=selectedIds[i];const target=dataWarehouse[checkId];if(target.sweepConfig.varCode!==baseVarCode){alert('❌ 无法合并！扫描自变量不同，无法建立统一横轴！');return;}const eps=1e-6;const targetLastX=target.xData[target.xData.length-1];if(target.xData.length!==baseLength||Math.abs(target.xData[0]-baseFirstX)>eps||Math.abs(targetLastX-baseLastX)>eps){alert('❌ 无法合并！[记录 #'+checkId+'] 的扫描范围或步数与基准不同');return;}}
-  const mergedSection=document.getElementById('mergedSection');mergedSection.style.display='block';
-  const combinedDatasets=[],embeddedTitles=[`Qhyd 多边界参数重叠对比图 (扫描: ${dataWarehouse[baselineId].sweepConfig.varName})`,'各对比曲线对应的边界参数定义分别如下：'];
-  selectedIds.forEach((id,index)=>{const record=dataWarehouse[id];const color=vizColorPalette[index%vizColorPalette.length];combinedDatasets.push({label:'曲线 #'+id+' -> ['+record.summaryText+']',data:record.yData,borderColor:color,backgroundColor:'transparent',borderWidth:2.5,pointRadius:2,tension:0.1});embeddedTitles.push('  • [曲线 #'+id+']: '+record.summaryText);});
-  const ctx=document.getElementById('mergedChartCanvas').getContext('2d');
-  if(mergedChartInstance){mergedChartInstance.destroy();}
-  mergedChartInstance=new Chart(ctx,{type:'line',data:{labels:dataWarehouse[baselineId].xData,datasets:combinedDatasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:15,font:{size:11}}},title:{display:true,text:embeddedTitles,align:'start',color:'#2C3E50',font:{size:11,weight:'normal',family:'monospace'},padding:{top:10,bottom:15}},tooltip:{mode:'index',intersect:false}},scales:{x:{title:{display:true,text:dataWarehouse[baselineId].xLabel,font:{weight:'bold'}}},y:{title:{display:true,text:'流量值 Qhyd',font:{weight:'bold'}}}}}});
-  mergedSection.scrollIntoView({behavior:'smooth',block:'start'});
-}
-
-function exportMergedChart(){if(!mergedChartInstance)return;const imageURI=mergedChartInstance.toBase64Image();const dl=document.createElement('a');dl.href=imageURI;dl.download='Qhyd_多曲线融合叠加对比报告图.png';document.body.appendChild(dl);dl.click();document.body.removeChild(dl);}
-function exportSingleChart(id){const chart=savedChartInstances[id];if(!chart)return;const imageURI=chart.toBase64Image();const dl=document.createElement('a');dl.href=imageURI;dl.download='Qhyd_边界单图记录_#'+id+'.png';document.body.appendChild(dl);dl.click();document.body.removeChild(dl);}
-function clearWorkspace(){if(confirm('确定要彻底清空存储仓库以及合并对比画布吗？')){document.getElementById('workspaceContainer').innerHTML='';document.getElementById('mergedSection').style.display='none';if(mergedChartInstance){mergedChartInstance.destroy();mergedChartInstance=null;}dataWarehouse={};savedChartInstances={};cardCounter=0;}}
-
 // ══════════════════════════════════════════════
 // MODULE 3: ENGINE PARAMETER CONVERTER
 // ══════════════════════════════════════════════
-function switchConvTab(evt, tabId) {
-  document.querySelectorAll('.conv-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.conv-tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('conv_'+tabId).classList.add('active');
-  evt.currentTarget.classList.add('active');
+function switchConvTab(e, ctabId) {
+  document.querySelectorAll('.conv-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.conv-panel').forEach(p => p.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  document.getElementById('conv_' + ctabId).classList.add('active');
 }
-function calc_kg_h2mg_str(){const rpm=parseFloat(document.getElementById('c_rpm1').value),kgh=parseFloat(document.getElementById('c_kgh1').value),cyl=parseFloat(document.getElementById('c_cyl1').value);document.getElementById('c_res1').innerText=(rpm&&kgh&&cyl)?((kgh*1000000)/(30*rpm*cyl)).toFixed(6):'0.000000';}
-function calc_mg_str2kg_h(){const rpm=parseFloat(document.getElementById('c_rpm2').value),mgstr=parseFloat(document.getElementById('c_mgstr2').value),cyl=parseFloat(document.getElementById('c_cyl2').value);document.getElementById('c_res2').innerText=(rpm&&mgstr&&cyl)?((mgstr*30*rpm*cyl)/1000000).toFixed(6):'0.000000';}
-function calc_CA2us(){const ca=parseFloat(document.getElementById('c_ca3').value),rpm=parseFloat(document.getElementById('c_rpm3').value);document.getElementById('c_res3').innerText=rpm?((ca*1000000)/(6*rpm)).toFixed(6):'0.000000';}
-function calc_us2CA(){const us=parseFloat(document.getElementById('c_us4').value),rpm=parseFloat(document.getElementById('c_rpm4').value);document.getElementById('c_res4').innerText=rpm?((us*6*rpm)/1000000).toFixed(6):'0.000000';}
+
+function calc_kg_h2mg_str() {
+  const rpm = parseFloat(document.getElementById('c_rpm1').value);
+  const kgh = parseFloat(document.getElementById('c_kgh1').value);
+  const cyl = parseFloat(document.getElementById('c_cyl1').value);
+  const el = document.getElementById('c_res1');
+  if (!isFinite(rpm) || !isFinite(kgh) || !isFinite(cyl) || rpm <= 0 || cyl <= 0) { el.textContent = '—'; return; }
+  const mg_str = (kgh * 1000000) / (30 * rpm * cyl);
+  el.textContent = mg_str.toFixed(6);
+}
+
+function calc_mg_str2kg_h() {
+  const rpm = parseFloat(document.getElementById('c_rpm2').value);
+  const mgstr = parseFloat(document.getElementById('c_mgstr2').value);
+  const cyl = parseFloat(document.getElementById('c_cyl2').value);
+  const el = document.getElementById('c_res2');
+  if (!isFinite(rpm) || !isFinite(mgstr) || !isFinite(cyl) || rpm <= 0 || cyl <= 0) { el.textContent = '—'; return; }
+  const kgh = (mgstr * 30 * rpm * cyl) / 1000000;
+  el.textContent = kgh.toFixed(6);
+}
+
+function calc_CA2us() {
+  const ca = parseFloat(document.getElementById('c_ca3').value);
+  const rpm = parseFloat(document.getElementById('c_rpm3').value);
+  const el = document.getElementById('c_res3');
+  if (!isFinite(ca) || !isFinite(rpm) || rpm <= 0) { el.textContent = '—'; return; }
+  const us = (ca * 1000000) / (6 * rpm);
+  el.textContent = us.toFixed(6);
+}
+
+function calc_us2CA() {
+  const us = parseFloat(document.getElementById('c_us4').value);
+  const rpm = parseFloat(document.getElementById('c_rpm4').value);
+  const el = document.getElementById('c_res4');
+  if (!isFinite(us) || !isFinite(rpm) || rpm <= 0) { el.textContent = '—'; return; }
+  const ca = (us * 6 * rpm) / 1000000;
+  el.textContent = ca.toFixed(6);
+}
 
 // ══════════════════════════════════════════════
-// INIT
+// MODULE 4: MAX HOLES CALCULATION (NEW)
 // ══════════════════════════════════════════════
-window.addEventListener('load', () => {
-  updateInnerIndicator(0); calcD(); calcMu();
-  ['base_M2','base_M3','base_M4','base_M5','base_B3','base_E3'].forEach(id=>{document.getElementById(id).addEventListener('input',updateBaseQhyd);});
-  updateBaseQhyd(); executeSweepCalculation();
-});
-window.addEventListener('resize', () => { updateInnerIndicator(currentInnerTab); });
-</script>
-
-<script>
-// ── Service Worker Registration ──
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.warn('SW registration failed:', err));
-  });
+function calcMaxHoles() {
+  const swirl = parseFloat(document.getElementById('mh_swirl').value);
+  const ca = parseFloat(document.getElementById('mh_ca').value);
+  const el = document.getElementById('mh_result');
+  if (!isFinite(swirl) || !isFinite(ca) || swirl <= 0 || ca <= 0) {
+    el.textContent = '—';
+    return;
+  }
+  const maxHoles = 360 / (ca * swirl);
+  el.textContent = maxHoles.toFixed(2);
 }
+
+// Initial triggers on page load
+window.onload = function() {
+  calcD();
+  calcMu();
+  updateBaseQhyd();
+  executeSweepCalculation();
+  calcMaxHoles();
+};
 </script>
 </body>
 </html>
